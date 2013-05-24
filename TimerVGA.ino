@@ -20,6 +20,12 @@
 #define DDR_COLOUR DDRF
 #define COLOUR(R, G, B) ((R << PORTF5) | (G << PORTF6) | (B << PORTF7))
 
+volatile unsigned char scanline_num;
+#define NUM_SCANLINES 240
+
+volatile unsigned char frame_num;
+
+
 void setup() {
   char cSREG;
   cSREG = SREG;
@@ -90,7 +96,10 @@ void setup() {
   PORT_COLOUR = COLOUR(0, 0, 0);
   DDR_COLOUR = COLOUR(1, 1, 1);
 
+  scanline_num = 1;
+
   // Enable the VSYNC!
+  frame_num = 0;
   PORTB = 0;
   TCCR1B = VSYNC_CLOCK_ON;
 
@@ -98,10 +107,23 @@ void setup() {
   interrupts();
 }
 
+// Triggered at the end of the VSYNC back porch
 ISR(TIMER1_COMPB_vect) {
-  // Enable the HSYNC!
-  PORTC = 0;
-  TCCR3B |= 
+  // Enable the HSYNC! 
+  // Every frame/64 switches the LED state.
+  // LED is PORTC7, the frame/64 bit is bit 5.
+  PORT_HSYNC = (frame_num++ & 0x20) << 2;
+  TCNT3 = 0;
+  scanline_num = 0;
+  TCCR3B = HSYNC_CLOCK_ON;
+}
+
+// Triggered at the end of the HSYNC back porch
+ISR(TIMER3_COMPB_vect) {
+  if (scanline_num++ >= NUM_SCANLINES) {
+    TCCR3B = HSYNC_CLOCK_OFF;
+    return;
+  }
 }
 
 void loop() {
