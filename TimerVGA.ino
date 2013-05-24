@@ -8,6 +8,18 @@
 #define HSYNC_CLOCK_ON ((1 << WGM32) | (1 << CS30))
 #define HSYNC_CLOCK_OFF (1 << WGM32)
 
+#define PORT_VSYNC PORTB
+#define DDR_VSYNC DDRB
+#define VSYNC_BIT (1 << PORTB5)
+
+#define PORT_HSYNC PORTC
+#define DDR_HSYNC DDRC
+#define HSYNC_BIT (1 << PORTC6)
+
+#define PORT_COLOUR PORTF
+#define DDR_COLOUR DDRF
+#define COLOUR(R, G, B) ((R << PORTF5) | (G << PORTF6) | (B << PORTF7))
+
 void setup() {
   char cSREG;
   cSREG = SREG;
@@ -40,8 +52,8 @@ void setup() {
   TIMSK1 = (1 << OCIE1B);
   // OC1A => PB5 => pin 9
   // Start with VSYNC not in progress.
-  PORTB = (1 << PORTB5);
-  DDRB = (1 << DDB5);
+  PORT_VSYNC = VSYNC_BIT;
+  DDR_VSYNC = VSYNC_BIT;
 
 
   //////////////////
@@ -70,9 +82,13 @@ void setup() {
   TIMSK3 = (1 << OCIE3B);
   // OC3A => PC6 => pin 5
   // Start with HSYNC not in progress.
-  PORTC = (1 << PORTC6);
-  DDRC = (1 << DDC6);
+  // PORTC7 is the LED
+  PORT_HSYNC = HSYNC_BIT;
+  DDR_HSYNC = HSYNC_BIT | (1 << PORTC7);
 
+  // Enable RGB
+  PORT_COLOUR = COLOUR(0, 0, 0);
+  DDR_COLOUR = COLOUR(1, 1, 1);
 
   // Enable the VSYNC!
   PORTB = 0;
