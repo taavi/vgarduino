@@ -3,10 +3,10 @@
 // ISR interrupt service routine
 #include < avr/interrupt.h >
 
-#define VSYNC_CLOCK_ON 3
-#define VSYNC_CLOCK_OFF 0
-#define HSYNC_CLOCK_ON 1
-#define HSYNC_CLOCK_OFF 0
+#define VSYNC_CLOCK_ON ((3 << WGM12) | (3 << CS10))
+#define VSYNC_CLOCK_OFF (3 << WGM12)
+#define HSYNC_CLOCK_ON ((3 << WGM32) | (1 << CS30))
+#define HSYNC_CLOCK_OFF (3 << WGM32)
 
 void setup() {
   char cSREG;
@@ -25,7 +25,7 @@ void setup() {
   // WGM11:0 = 2 (top of 14)
   TCCR1A = (3 << COM1A0) | (2 << WGM10);
   // WGM13:2 = 3 (top of 14)
-  TCCR1B = (3 << WGM12) | (VSYNC_CLOCK_OFF << CS10);
+  TCCR1B = VSYNC_CLOCK_OFF;
   // Start counter at 0
   TCNT1 = 0;
   // VSYNC clock is 16000000Hz / 64 = 250kHz
@@ -56,7 +56,7 @@ void setup() {
   // WGM31:0 = 3 (top of 7)
   TCCR3A = (3 << COM3A0) | (3 << WGM30);
   // WGM33:2 = 1 (top of 7)
-  TCCR3B = (1 << WGM32) | (HSYNC_CLOCK_OFF << CS30);
+  TCCR3B = HSYNC_CLOCK_OFF;
   // Start counter at 0
   TCNT3 = 0;
   // HSYNC clock is 16000000Hz / 1 = 16MHz
@@ -76,7 +76,13 @@ void setup() {
 
   // Enable the VSYNC!
   PORTB = 0;
-  TCCR1B |= (VSYNC_CLOCK_ON << CS10);
+  TCCR1B = VSYNC_CLOCK_ON;
 
   SREG = cSREG;
+}
+
+ISR(TIMER1_COMPB_vect) {
+  // Enable the HSYNC!
+  PORTC = 0;
+  TCCR3B |= 
 }
