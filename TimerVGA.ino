@@ -5,13 +5,13 @@
 
 #define VSYNC_CLOCK_ON ((3 << WGM12) | (3 << CS10))
 #define VSYNC_CLOCK_OFF (3 << WGM12)
-#define HSYNC_CLOCK_ON ((3 << WGM32) | (1 << CS30))
-#define HSYNC_CLOCK_OFF (3 << WGM32)
+#define HSYNC_CLOCK_ON ((1 << WGM32) | (1 << CS30))
+#define HSYNC_CLOCK_OFF (1 << WGM32)
 
 void setup() {
   char cSREG;
   cSREG = SREG;
-  __disable_interrupts();
+  noInterrupts();
 
   //////////////////
   // Configure VSYNC
@@ -36,7 +36,7 @@ void setup() {
   // VSYNC + VBackPorch (0.2ms + 1ms)
   OCR1B = 50 + 250;
   // Listen for the end of the back porch
-  TIFR1 = 0
+  TIFR1 = 0;
   TIMSK1 = (1 << OCIE1B);
   // OC1A => PB5 => pin 9
   // Start with VSYNC not in progress.
@@ -66,7 +66,7 @@ void setup() {
   // VSYNC + VBackPorch (4.7us + 7us)
   OCR3B = 75 + 112;
   // Listen for the end of the back porch
-  TIFR3 = 0
+  TIFR3 = 0;
   TIMSK3 = (1 << OCIE3B);
   // OC3A => PC6 => pin 5
   // Start with HSYNC not in progress.
@@ -79,10 +79,14 @@ void setup() {
   TCCR1B = VSYNC_CLOCK_ON;
 
   SREG = cSREG;
+  interrupts();
 }
 
 ISR(TIMER1_COMPB_vect) {
   // Enable the HSYNC!
   PORTC = 0;
   TCCR3B |= 
+}
+
+void loop() {
 }
