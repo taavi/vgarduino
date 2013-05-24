@@ -5,8 +5,8 @@
 
 #define VSYNC_CLOCK_ON ((3 << WGM12) | (3 << CS10))
 #define VSYNC_CLOCK_OFF (3 << WGM12)
-#define HSYNC_CLOCK_ON ((1 << WGM32) | (1 << CS30))
-#define HSYNC_CLOCK_OFF (1 << WGM32)
+#define HSYNC_CLOCK_ON ((3 << WGM32) | (1 << CS30))
+#define HSYNC_CLOCK_OFF (3 << WGM32)
 
 #define PORT_VSYNC PORTB
 #define DDR_VSYNC DDRB
@@ -40,7 +40,7 @@ void setup() {
   // COM1C = 0 -> GNDN
   // CS1 = 3 -> /64
   //
-  // WGM11:0 = 2 (top of 14)
+  // WGM11:0 = 2 (bottom of 14)
   TCCR1A = (3 << COM1A0) | (2 << WGM10);
   // WGM13:2 = 3 (top of 14)
   TCCR1B = VSYNC_CLOCK_OFF;
@@ -65,20 +65,21 @@ void setup() {
   //////////////////
   // Configure HSYNC
   //////////////////
-  // WGM3 = 7 -> Fast PWM, 10-bit, up to 0x3FF
+  // WGM3 = 14 -> Fast PWM, up to ICR
   // COM3A = 3 -> -hsync
   // COM3B = 0 -> GNDN
   // COM3C = 0 -> GNDN
   // CS3 = 1 -> /1
   //
-  // WGM31:0 = 3 (top of 7)
-  TCCR3A = (3 << COM3A0) | (3 << WGM30);
-  // WGM33:2 = 1 (top of 7)
+  // WGM31:0 = 2 (bottom of 14)
+  TCCR3A = (3 << COM3A0) | (2 << WGM30);
+  // WGM33:2 = 3 (top of 14)
   TCCR3B = HSYNC_CLOCK_OFF;
   // Start counter at 0
   TCNT3 = 0;
   // HSYNC clock is 16000000Hz / 1 = 16MHz
   // 16MHz / 1024 = 15.6kHz
+  ICR3 = 1024;
   // 16MHz * 4.7usSync = 75
   OCR3A = 75;
   // VSYNC + VBackPorch (4.7us + 7us)
@@ -95,8 +96,6 @@ void setup() {
   // Enable RGB
   PORT_COLOUR = COLOUR(0, 0, 0);
   DDR_COLOUR = COLOUR(1, 1, 1);
-
-  scanline_num = 1;
 
   // Enable the VSYNC!
   frame_num = 0;
