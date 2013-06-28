@@ -23,10 +23,10 @@
 volatile unsigned char scanline_num;
 #define NUM_SCANLINES 200
 
+#define HRES 12
+#define VRES 10
 volatile unsigned char end_of_frame;
 volatile signed char dot_x, dot_y;
-#define HRES 8
-#define VRES 10
 volatile unsigned char hbuffer[HRES] = {0};
 
 #define NOP __asm__ __volatile__ ("nop\n\t")
@@ -150,6 +150,8 @@ ISR(TIMER3_COMPB_vect) {
 #if 1
   for (current_x = 0; current_x < HRES; current_x++) {
     PORT_COLOUR = hbuffer[current_x];
+    NOP;    NOP;    NOP;    NOP;
+    NOP;    NOP;    NOP;    NOP;
     NOP;    NOP;    NOP;    NOP;
     NOP;    NOP;    NOP;    NOP;
     NOP;    NOP;    NOP;    NOP;
