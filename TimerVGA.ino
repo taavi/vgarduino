@@ -25,9 +25,12 @@ volatile unsigned char scanline_num;
 
 #define HRES 12
 #define VRES 10
+#define PAD_HALF_HEIGHT 2
+#define PAD_FULL_HEIGHT (PAD_HALF_HEIGHT * 2)
 volatile unsigned char end_of_frame;
 volatile signed char dot_x, dot_y;
-volatile signed char pad_y1 = 0, pad_y2 = VRES/3;
+// pad_y2 is inclusive
+volatile signed char pad_y1 = 0, pad_y2 = (PAD_FULL_HEIGHT - 1);
 volatile unsigned char hbuffer[HRES] = {0};
 volatile unsigned char game_over = 0;
 
@@ -225,6 +228,11 @@ void loop() {
         if (pad_y1 <= dot_y && dot_y <= pad_y2) {
           dot_x = 2;
           x_dir = 1;
+          if ((dot_y - pad_y1) < PAD_HALF_HEIGHT) {
+            y_dir = -1;
+          } else {
+            y_dir = 1;
+          }
         } else {
           game_over = 1;
           x_dir = 1;
