@@ -64,7 +64,7 @@ void setup() {
   // Start with HSYNC not in progress.
   // PORTC7 is the LED
   PORT_HSYNC = HSYNC_BIT;
-  DDR_HSYNC = HSYNC_BIT | (1 << PORTC7);
+  DDR_HSYNC = HSYNC_BIT;
 
 
   //////////////////
@@ -76,6 +76,7 @@ void setup() {
   // COM1C = 0 -> GNDN
   // CS1 = 6 -> external Tn pin, falling edge
   //
+  DDRD = 0;
   // WGM11:0 = 2 (bottom of 14)
   TCCR1A = (3 << COM1A0) | (2 << WGM10);
   // WGM13:2 = 3 (top of 14)
@@ -105,7 +106,7 @@ void setup() {
   // Enable the VSYNC!
   frame_num = 0;
   PORTC = 0;
-  TCCR1B = HSYNC_CLOCK_ON;
+  TCCR3B = HSYNC_CLOCK_ON;
 
   SREG = cSREG;
   interrupts();
@@ -117,7 +118,7 @@ ISR(TIMER1_COMPB_vect) {
   // Every frame/64 switches the LED state.
   // LED is PORTC7, the frame/64 bit is bit 5.
   // So we get the 5th bit, then shift it over to 7th.
-  PORT_HSYNC = (frame_num++ & 0x20) << 2;
+//  PORT_HSYNC = (frame_num++ & 0x20) << 2;
   scanline_num = 0;
 }
 
