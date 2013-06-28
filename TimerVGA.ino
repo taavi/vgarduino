@@ -21,7 +21,7 @@
 #define COLOUR(R, G, B) ((R << PORTF5) | (G << PORTF6) | (B << PORTF7))
 
 volatile unsigned char scanline_num;
-#define NUM_SCANLINES 240
+#define NUM_SCANLINES 200
 
 volatile unsigned char frame_num;
 
@@ -98,8 +98,6 @@ void setup() {
   PORT_VSYNC = VSYNC_BIT;
   DDR_VSYNC = VSYNC_BIT;
 
-
-
   // Enable RGB
   PORT_COLOUR = COLOUR(0, 0, 0);
   DDR_COLOUR = COLOUR(1, 1, 1);
@@ -118,17 +116,17 @@ ISR(TIMER1_COMPB_vect) {
   // Enable the HSYNC! 
   // Every frame/64 switches the LED state.
   // LED is PORTC7, the frame/64 bit is bit 5.
+  // So we get the 5th bit, then shift it over to 7th.
   PORT_HSYNC = (frame_num++ & 0x20) << 2;
-  TCNT3 = 0;
   scanline_num = 0;
-  TCCR3B = HSYNC_CLOCK_ON;
 }
 
 // Triggered at the end of the HSYNC back porch
 ISR(TIMER3_COMPB_vect) {
-  if (scanline_num++ >= NUM_SCANLINES) {
-    TCCR3B = HSYNC_CLOCK_OFF;
+  if (scanline_num >= NUM_SCANLINES) {
     return;
+  } else {
+    scanline_num++;
   }
 
   // Display all 8 colours, for 8 lines each.
