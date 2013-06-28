@@ -31,6 +31,8 @@ void setup() {
   cSREG = SREG;
   noInterrupts();
 
+  // modeline 320x200_60,00Hz_15.7kHz 6.162 320 328 357 392 200 221 224 262 -hsync -vsync
+
   //////////////////
   // Configure HSYNC
   //////////////////
@@ -47,12 +49,14 @@ void setup() {
   // Start counter at 0
   TCNT3 = 0;
   // HSYNC clock is 16000000Hz / 1 = 16MHz
-  // 16MHz / 1024 = 15.6kHz
-  ICR3 = 1024;
-  // 16MHz * 4.7usSync = 75
+  // 16MHz / 6.162MHz = 2.6 system clock to pixel clock multiplier
+  // 392 * 2.6 ~ 1018
+  ICR3 = 1018;
+  // (357 - 328) * 2.6 ~ 75
   OCR3A = 75;
-  // VSYNC + VBackPorch (4.7us + 7us)
-  OCR3B = 75 + 112;
+  // HSYNC + HBackPorch
+  // (392 - 328) * 2.6 ~ 166
+  OCR3B = 166;
   // Listen for the end of the back porch
   TIFR3 = 0;
   TIMSK3 = (1 << OCIE3B);
