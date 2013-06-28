@@ -32,6 +32,38 @@ void setup() {
   noInterrupts();
 
   //////////////////
+  // Configure HSYNC
+  //////////////////
+  // WGM3 = 14 -> Fast PWM, up to ICR
+  // COM3A = 3 -> -hsync
+  // COM3B = 0 -> GNDN
+  // COM3C = 0 -> GNDN
+  // CS3 = 1 -> /1
+  //
+  // WGM31:0 = 2 (bottom of 14)
+  TCCR3A = (3 << COM3A0) | (2 << WGM30);
+  // WGM33:2 = 3 (top of 14)
+  TCCR3B = HSYNC_CLOCK_OFF;
+  // Start counter at 0
+  TCNT3 = 0;
+  // HSYNC clock is 16000000Hz / 1 = 16MHz
+  // 16MHz / 1024 = 15.6kHz
+  ICR3 = 1024;
+  // 16MHz * 4.7usSync = 75
+  OCR3A = 75;
+  // VSYNC + VBackPorch (4.7us + 7us)
+  OCR3B = 75 + 112;
+  // Listen for the end of the back porch
+  TIFR3 = 0;
+  TIMSK3 = (1 << OCIE3B);
+  // OC3A => PC6 => pin 5
+  // Start with HSYNC not in progress.
+  // PORTC7 is the LED
+  PORT_HSYNC = HSYNC_BIT;
+  DDR_HSYNC = HSYNC_BIT | (1 << PORTC7);
+
+
+  //////////////////
   // Configure VSYNC
   //////////////////
   // WGM1 = 14 -> Fast PWM up to ICR
@@ -62,36 +94,6 @@ void setup() {
   DDR_VSYNC = VSYNC_BIT;
 
 
-  //////////////////
-  // Configure HSYNC
-  //////////////////
-  // WGM3 = 14 -> Fast PWM, up to ICR
-  // COM3A = 3 -> -hsync
-  // COM3B = 0 -> GNDN
-  // COM3C = 0 -> GNDN
-  // CS3 = 1 -> /1
-  //
-  // WGM31:0 = 2 (bottom of 14)
-  TCCR3A = (3 << COM3A0) | (2 << WGM30);
-  // WGM33:2 = 3 (top of 14)
-  TCCR3B = HSYNC_CLOCK_OFF;
-  // Start counter at 0
-  TCNT3 = 0;
-  // HSYNC clock is 16000000Hz / 1 = 16MHz
-  // 16MHz / 1024 = 15.6kHz
-  ICR3 = 1024;
-  // 16MHz * 4.7usSync = 75
-  OCR3A = 75;
-  // VSYNC + VBackPorch (4.7us + 7us)
-  OCR3B = 75 + 112;
-  // Listen for the end of the back porch
-  TIFR3 = 0;
-  TIMSK3 = (1 << OCIE3B);
-  // OC3A => PC6 => pin 5
-  // Start with HSYNC not in progress.
-  // PORTC7 is the LED
-  PORT_HSYNC = HSYNC_BIT;
-  DDR_HSYNC = HSYNC_BIT | (1 << PORTC7);
 
   // Enable RGB
   PORT_COLOUR = COLOUR(0, 0, 0);
