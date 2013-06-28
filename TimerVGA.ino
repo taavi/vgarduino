@@ -29,6 +29,7 @@ volatile unsigned char end_of_frame;
 volatile signed char dot_x, dot_y;
 volatile signed char pad_y1 = 0, pad_y2 = VRES/3;
 volatile unsigned char hbuffer[HRES] = {0};
+volatile unsigned char game_over = 0;
 
 #define NOP __asm__ __volatile__ ("nop\n\t")
 
@@ -179,10 +180,15 @@ ISR(TIMER3_COMPB_vect) {
   PORT_COLOUR = COLOUR(0, 0, 0);
   
   // Render the next frame here
+  if (game_over) {
+    for (current_x = 0; current_x < HRES; current_x++) {
+      hbuffer[current_x] = COLOUR(1, 0, 0);
+    }
+    return;
+  }
   current_y = scanline_num / (NUM_SCANLINES / VRES);
   dot_x_ = dot_x;
   dot_y_ = dot_y;
-//  hbuffer[HRES - 1] = (current_y == dot_y) ? COLOUR(1, 0, 0) : COLOUR(0, 0, 0);
   if (pad_y1 <= current_y && current_y <= pad_y2) {
     hbuffer[0] = COLOUR(0, 1, 0);
   } else {
@@ -190,7 +196,7 @@ ISR(TIMER3_COMPB_vect) {
   }
   for (current_x = 1; current_x < HRES; current_x++) {
     if ((current_x == dot_x_) && (current_y == dot_y_)) {
-      hbuffer[current_x] = COLOUR(1, 0, 0);
+      hbuffer[current_x] = COLOUR(0, 0, 1);
     } else {
       hbuffer[current_x] = COLOUR(0, 0, 0);
     }
@@ -204,11 +210,25 @@ void loop() {
   if (end_of_frame) {
     end_of_frame = 0;
     if (delay++ % 5 == 0) {
+      if (game_over) {
+        game_over++;
+        if (game_over > 15) {
+          game_over = 0;
+        }
+      }
+
       dot_x += x_dir;
       if (dot_x == HRES-1) {
         x_dir = -1;
-      } else if (dot_x == 1) {
-        x_dir = 1;
+      } else if (dot_x == 0) {
+        if (pad_y1 <= dot_y && dot_y <= pad_y2) {
+          dot_x = 2;
+          x_dir = 1;
+        } else {
+          game_over = 1;
+          x_dir = 1;
+          return;
+        }
       }
       dot_y += y_dir;
       if (dot_y == VRES-1) {
@@ -216,6 +236,9 @@ void loop() {
       } else if (dot_y == 0) {
         y_dir = 1;
       }
+
+
+      // Paddle fun
       if (pad_y2 + 1 == VRES) {
         pad_dir = -1;
       } else if (pad_y1 == 0) {
