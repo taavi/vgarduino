@@ -132,12 +132,17 @@ ISR(TIMER3_COMPB_vect) {
 
   // Display all 8 colours, for 8 lines each.
   // RGB is PORTF5:7, so masking the lower 3 bits and shifting by 5.
-  PORT_COLOUR = ((scanline_num >> 3) & 0x07) << 5;
-
+  PORT_COLOUR = (((scanline_num >> 3) + 0) & 0x07) << 5;
+  delayMicroseconds(10);
+  PORT_COLOUR = (((scanline_num >> 3) + 1) & 0x07) << 5;
+  delayMicroseconds(10);
+  PORT_COLOUR = (((scanline_num >> 3) + 2) & 0x07) << 5;
+  delayMicroseconds(10);
   // Now I have 700 clock cycles to kill.
   // Or I could do a sleep.
   // 47us is the whole display, so 40 should be left-justified.
-  delayMicroseconds(40);
+//  delayMicroseconds(40);
+//  PORT_COLOUR = COLOUR(1, 1, 1);
 
   PORT_COLOUR = COLOUR(0, 0, 0);
 }
