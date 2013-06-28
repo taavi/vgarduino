@@ -215,6 +215,7 @@ void loop() {
         if (game_over > 15) {
           game_over = 0;
         }
+        return;
       }
 
       dot_x += x_dir;
