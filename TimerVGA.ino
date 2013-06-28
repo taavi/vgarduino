@@ -27,6 +27,7 @@ volatile unsigned char scanline_num;
 #define VRES 10
 volatile unsigned char end_of_frame;
 volatile signed char dot_x, dot_y;
+volatile signed char pad_y1 = 0, pad_y2 = VRES/3;
 volatile unsigned char hbuffer[HRES] = {0};
 
 #define NOP __asm__ __volatile__ ("nop\n\t")
@@ -182,25 +183,31 @@ ISR(TIMER3_COMPB_vect) {
   dot_x_ = dot_x;
   dot_y_ = dot_y;
 //  hbuffer[HRES - 1] = (current_y == dot_y) ? COLOUR(1, 0, 0) : COLOUR(0, 0, 0);
-  for (current_x = 0; current_x < HRES; current_x++) {
-    hbuffer[current_x] = (
-      (current_x == dot_x_)
-      &&
-      (current_y == dot_y_)
-    ) ? COLOUR(1, 0, 0) : COLOUR(0, 0, 0);
+  if (pad_y1 <= current_y && current_y <= pad_y2) {
+    hbuffer[0] = COLOUR(0, 1, 0);
+  } else {
+    hbuffer[0] = COLOUR(0, 0, 0);
+  }
+  for (current_x = 1; current_x < HRES; current_x++) {
+    if ((current_x == dot_x_) && (current_y == dot_y_)) {
+      hbuffer[current_x] = COLOUR(1, 0, 0);
+    } else {
+      hbuffer[current_x] = COLOUR(0, 0, 0);
+    }
   }
 }
 
 void loop() {
   static unsigned char delay = 0;
   static signed char x_dir = 1, y_dir = 1;
+  static signed char pad_dir = 1;
   if (end_of_frame) {
     end_of_frame = 0;
     if (delay++ % 5 == 0) {
       dot_x += x_dir;
       if (dot_x == HRES-1) {
         x_dir = -1;
-      } else if (dot_x == 0) {
+      } else if (dot_x == 1) {
         x_dir = 1;
       }
       dot_y += y_dir;
@@ -209,8 +216,13 @@ void loop() {
       } else if (dot_y == 0) {
         y_dir = 1;
       }
-//      dot_x = (dot_x + 1) % HRES;
-//      dot_y = (dot_y + 1) % VRES;
+      if (pad_y2 + 1 == VRES) {
+        pad_dir = -1;
+      } else if (pad_y1 == 0) {
+        pad_dir = 1;
+      } 
+      pad_y1 += pad_dir;
+      pad_y2 += pad_dir;
     }
   }
 }
