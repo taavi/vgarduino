@@ -212,7 +212,7 @@ void loop() {
   static signed char pad_dir = 1;
   if (end_of_frame) {
     end_of_frame = 0;
-    if (delay++ % 5 == 0) {
+    if (delay++ % 8 == 0) {
       if (game_over) {
         game_over++;
         if (game_over > 15) {
