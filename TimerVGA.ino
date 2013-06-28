@@ -23,10 +23,17 @@
 volatile unsigned char scanline_num;
 #define NUM_SCANLINES 200
 
-volatile unsigned char frame_num;
+volatile unsigned char end_of_frame;
+volatile signed char dot_x, dot_y;
+#define HRES 8
+#define VRES 10
+volatile unsigned char hbuffer[HRES] = {0};
 
+#define NOP __asm__ __volatile__ ("nop\n\t")
 
 void setup() {
+//  Serial.begin(9600);
+
   char cSREG;
   cSREG = SREG;
   noInterrupts();
@@ -103,8 +110,11 @@ void setup() {
   PORT_COLOUR = COLOUR(0, 0, 0);
   DDR_COLOUR = COLOUR(1, 1, 1);
 
+  end_of_frame = 0;
+  dot_x = 0;
+  dot_y = 0;
+
   // Enable the VSYNC!
-  frame_num = 0;
   PORTC = 0;
   TCCR3B = HSYNC_CLOCK_ON;
 
@@ -124,12 +134,30 @@ ISR(TIMER1_COMPB_vect) {
 
 // Triggered at the end of the HSYNC back porch
 ISR(TIMER3_COMPB_vect) {
+  register unsigned char current_x, current_y;
+  register unsigned char dot_x_, dot_y_;
+
   if (scanline_num >= NUM_SCANLINES) {
+    if (scanline_num == NUM_SCANLINES) {
+      end_of_frame = 1;
+      scanline_num++;
+    }
     return;
   } else {
     scanline_num++;
   }
 
+#if 1
+  for (current_x = 0; current_x < HRES; current_x++) {
+    PORT_COLOUR = hbuffer[current_x];
+    NOP;    NOP;    NOP;    NOP;
+    NOP;    NOP;    NOP;    NOP;
+    NOP;    NOP;    NOP;    NOP;
+    NOP;    NOP;    NOP;    NOP;
+    NOP;    NOP;    NOP;    NOP;
+    NOP;    NOP;    NOP;    NOP;
+  }
+#else
   // Display all 8 colours, for 8 lines each.
   // RGB is PORTF5:7, so masking the lower 3 bits and shifting by 5.
   PORT_COLOUR = (((scanline_num >> 3) + 0) & 0x07) << 5;
@@ -143,9 +171,44 @@ ISR(TIMER3_COMPB_vect) {
   // 47us is the whole display, so 40 should be left-justified.
 //  delayMicroseconds(40);
 //  PORT_COLOUR = COLOUR(1, 1, 1);
+#endif
 
   PORT_COLOUR = COLOUR(0, 0, 0);
+  
+  // Render the next frame here
+  current_y = scanline_num / (NUM_SCANLINES / VRES);
+  dot_x_ = dot_x;
+  dot_y_ = dot_y;
+//  hbuffer[HRES - 1] = (current_y == dot_y) ? COLOUR(1, 0, 0) : COLOUR(0, 0, 0);
+  for (current_x = 0; current_x < HRES; current_x++) {
+    hbuffer[current_x] = (
+      (current_x == dot_x_)
+      &&
+      (current_y == dot_y_)
+    ) ? COLOUR(1, 0, 0) : COLOUR(0, 0, 0);
+  }
 }
 
 void loop() {
+  static unsigned char delay = 0;
+  static signed char x_dir = 1, y_dir = 1;
+  if (end_of_frame) {
+    end_of_frame = 0;
+    if (delay++ % 5 == 0) {
+      dot_x += x_dir;
+      if (dot_x == HRES-1) {
+        x_dir = -1;
+      } else if (dot_x == 0) {
+        x_dir = 1;
+      }
+      dot_y += y_dir;
+      if (dot_y == VRES-1) {
+        y_dir = -1;
+      } else if (dot_y == 0) {
+        y_dir = 1;
+      }
+//      dot_x = (dot_x + 1) % HRES;
+//      dot_y = (dot_y + 1) % VRES;
+    }
+  }
 }
