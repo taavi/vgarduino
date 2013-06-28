@@ -3,7 +3,7 @@
 // ISR interrupt service routine
 #include < avr/interrupt.h >
 
-#define VSYNC_CLOCK_ON ((3 << WGM12) | (3 << CS10))
+#define VSYNC_CLOCK_ON ((3 << WGM12) | (6 << CS10))
 #define VSYNC_CLOCK_OFF (3 << WGM12)
 #define HSYNC_CLOCK_ON ((3 << WGM32) | (1 << CS30))
 #define HSYNC_CLOCK_OFF (3 << WGM32)
@@ -74,21 +74,22 @@ void setup() {
   // COM1A = 3 -> -vsync
   // COM1B = 0 -> GNDN
   // COM1C = 0 -> GNDN
-  // CS1 = 3 -> /64
+  // CS1 = 6 -> external Tn pin, falling edge
   //
   // WGM11:0 = 2 (bottom of 14)
   TCCR1A = (3 << COM1A0) | (2 << WGM10);
   // WGM13:2 = 3 (top of 14)
-  TCCR1B = VSYNC_CLOCK_OFF;
+  TCCR1B = VSYNC_CLOCK_ON;
   // Start counter at 0
   TCNT1 = 0;
-  // VSYNC clock is 16000000Hz / 64 = 250kHz
-  // 250000Hz / 60 Hz = 4166
-  ICR1 = 4166;
-  // 250kHz * 0.2msSync = 50
-  OCR1A = 50;
-  // VSYNC + VBackPorch (0.2ms + 1ms)
-  OCR1B = 50 + 250;
+  // VSYNC clock is row clock, straight from the modeline
+  // IRC1 counts _inclusive_, and we start at 0, so 262 - 1 = 261.
+  ICR1 = 261;
+  // 224 - 221 = 3 lines
+  OCR1A = 3;
+  // VSYNC + VBackPorch
+  // 262 - 221 = 41 lines
+  OCR1B = 41;
   // Listen for the end of the back porch
   TIFR1 = 0;
   TIMSK1 = (1 << OCIE1B);
@@ -105,8 +106,8 @@ void setup() {
 
   // Enable the VSYNC!
   frame_num = 0;
-  PORTB = 0;
-  TCCR1B = VSYNC_CLOCK_ON;
+  PORTC = 0;
+  TCCR1B = HSYNC_CLOCK_ON;
 
   SREG = cSREG;
   interrupts();
